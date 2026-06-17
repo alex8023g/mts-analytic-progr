@@ -1,3 +1,5 @@
+import { FileUpload } from '@/components/FileUpload';
+
 export default function ImportPage() {
   return (
     <main className='mx-auto flex w-full max-w-xl flex-col gap-6 p-8'>
@@ -7,6 +9,7 @@ export default function ImportPage() {
           Выберите файл и загрузите его на сервер.
         </p>
       </header>
+      <FileUpload />
     </main>
   );
 }
