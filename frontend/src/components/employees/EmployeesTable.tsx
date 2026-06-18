@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import type { Employee } from './employees_actions';
+import type { Employee } from '@/app/employees/employees_actions';
 
 const dateFmt = new Intl.DateTimeFormat('ru-RU');
 const moneyFmt = new Intl.NumberFormat('ru-RU', {
@@ -76,7 +76,7 @@ export function EmployeesTable({ data }: { data: Employee[] }) {
   return (
     <div className='rounded-lg border border-black/10 dark:border-white/15'>
       <Table>
-        <TableHeader>
+        <TableHeader className='bg-gray-100'>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (

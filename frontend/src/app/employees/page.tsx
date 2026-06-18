@@ -1,8 +1,13 @@
+import { DataTableTextFilter } from '@/components/employees/DataTableTextFilter';
 import { getEmployees } from './employees_actions';
-import { EmployeesTable } from './EmployeesTable';
+import { EmployeesTable } from '@/components/employees/EmployeesTable';
 
-export default async function EmployeesPage() {
-  const employees = await getEmployees();
+export default async function EmployeesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const employees = await getEmployees(searchParams);
 
   const reportDate = employees[0]?.report_date;
 
@@ -16,6 +21,9 @@ export default async function EmployeesPage() {
           </p>
         )}
       </header>
+      <div>
+        <DataTableTextFilter />
+      </div>
       <EmployeesTable data={employees} />
     </main>
   );
