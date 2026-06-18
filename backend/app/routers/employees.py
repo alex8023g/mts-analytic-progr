@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -11,6 +11,12 @@ router = APIRouter(tags=["employees"])
 
 @router.get("/employees", response_model=list[EmployeeRead])
 def list_employees(
+    full_name: str | None = Query(default=None),
     session: Session = Depends(get_session),
 ) -> list[Employee]:
-    return list(session.scalars(select(Employee).order_by(Employee.id)))
+    stmt = select(Employee).order_by(Employee.full_name)
+
+    if full_name:
+        stmt = stmt.where(Employee.full_name.ilike(f"%{full_name}%"))
+
+    return list(session.scalars(stmt))
