@@ -33,6 +33,15 @@ def _parse_dates(series: pd.Series) -> pd.Series:
     return combined.dt.date.where(combined.notna(), None)
 
 
+def _read_report_date(contents: bytes) -> date:
+    """Read export date from the first row of the file."""
+    head = pd.read_excel(io.BytesIO(contents), engine="pyxlsb", header=None, nrows=1)
+    parsed = _parse_dates(head.iloc[0]).dropna()
+    if parsed.empty:
+        raise ValueError("В первой строке файла не найдена дата выгрузки")
+    return parsed.iloc[0]
+
+
 def _read_dataframe(contents: bytes) -> pd.DataFrame:
     try:
         # header is row 1
@@ -54,9 +63,10 @@ def _read_dataframe(contents: bytes) -> pd.DataFrame:
     return df.astype(object).where(pd.notnull(df), None)
 
 
-def _to_employee(record: dict) -> Employee:
+def _to_employee(record: dict, report_date: date) -> Employee:
     salary = record.get("salary")
     return Employee(
+        report_date=report_date,
         department=record.get("department"),
         division=record.get("division"),
         position=record.get("position"),
@@ -77,8 +87,11 @@ def _as_date(value) -> date | None:
 
 def import_employees(contents: bytes, session: Session) -> tuple[int, list[Employee]]:
     """Parse the file"""
+    report_date = _read_report_date(contents)
     df = _read_dataframe(contents)
-    employees = [_to_employee(rec) for rec in df.to_dict(orient="records")]
+    employees = [
+        _to_employee(rec, report_date) for rec in df.to_dict(orient="records")
+    ]
 
     session.add_all(employees)
     session.commit()

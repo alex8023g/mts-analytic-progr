@@ -1,6 +1,7 @@
+import uuid
 from datetime import date
 
-from sqlalchemy import Date, Integer, String
+from sqlalchemy import Date, Integer, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -11,8 +12,9 @@ class Employee(Base):
 
     __tablename__ = "employees"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
 
+    report_date: Mapped[date] = mapped_column(Date)  # Дата выгрузки из первой строки файла ("Данные")
     department: Mapped[str] = mapped_column(String)  # Департамент
     division: Mapped[str | None] = mapped_column(String)  # Отдел
     position: Mapped[str] = mapped_column(String)  # Должность
