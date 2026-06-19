@@ -1,11 +1,12 @@
 import io
+import uuid
 from datetime import date
 
 import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Employee
+from app.models import Division, Employee
 
 COLUMN_MAP = {
     "Департамент": "department",
@@ -64,12 +65,14 @@ def _read_dataframe(contents: bytes) -> pd.DataFrame:
     return df.astype(object).where(pd.notnull(df), None)
 
 
-def _to_employee(record: dict, report_date: date) -> Employee:
+def _to_employee(
+    record: dict, report_date: date, division: Division | None
+) -> Employee:
     salary = record.get("salary")
     return Employee(
         report_date=report_date,
         department=record.get("department"),
-        division=record.get("division"),
+        division=division,
         position=record.get("position"),
         manager=record.get("manager"),
         full_name=record.get("full_name"),
@@ -80,27 +83,47 @@ def _to_employee(record: dict, report_date: date) -> Employee:
     )
 
 
+def _get_or_create_division(
+    session: Session, name: str | None, cache: dict[str, Division]
+) -> Division | None:
+    if name is None:
+        return None
+    if name in cache:
+        return cache[name]
+    division = session.scalars(
+        select(Division).where(Division.name == name)
+    ).first()
+    if division is None:
+        division = Division(name=name)
+        session.add(division)
+        session.flush()
+    cache[name] = division
+    return division
+
+
 def _as_date(value) -> date | None:
     if value is None:
         return None
     return value.date() if hasattr(value, "date") else value
 
 
-def _has_fired_record(session: Session, full_name: str, division: str | None) -> bool:
+def _has_fired_record(
+    session: Session, full_name: str, division_id: uuid.UUID | None
+) -> bool:
     stmt = select(Employee.id).where(
         Employee.full_name == full_name,
-        Employee.division == division,
+        Employee.division_id == division_id,
         Employee.fired_at.is_not(None),
     )
     return session.scalars(stmt).first() is not None
 
 
 def _delete_active_records(
-    session: Session, full_name: str, division: str | None
+    session: Session, full_name: str, division_id: uuid.UUID | None
 ) -> list[Employee]:
     stmt = select(Employee).where(
         Employee.full_name == full_name,
-        Employee.division == division,
+        Employee.division_id == division_id,
         Employee.fired_at.is_(None),
     )
     deleted = list(session.scalars(stmt))
@@ -114,16 +137,19 @@ def import_employees(contents: bytes, session: Session) -> tuple[int, list[Emplo
     report_date = _read_report_date(contents)
     df = _read_dataframe(contents)
 
+    divisions: dict[str, Division] = {}
     added: list[Employee] = []
     for rec in df.to_dict(orient="records"):
-        employee = _to_employee(rec, report_date)
+        division = _get_or_create_division(session, rec.get("division"), divisions)
+        division_id = division.id if division else None
+        employee = _to_employee(rec, report_date, division)
 
         if employee.fired_at is None:
-            if _has_fired_record(session, employee.full_name, employee.division):
+            if _has_fired_record(session, employee.full_name, division_id):
                 continue
         else:
             for dup in _delete_active_records(
-                session, employee.full_name, employee.division
+                session, employee.full_name, division_id
             ):
                 if dup in added:
                     added.remove(dup)

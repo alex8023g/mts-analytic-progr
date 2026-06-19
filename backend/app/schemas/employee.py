@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class EmployeeRead(BaseModel):
@@ -19,6 +19,14 @@ class EmployeeRead(BaseModel):
     fired_at: date | None
     staff_type: str
     salary: int
+
+    @field_validator("division", mode="before")
+    @classmethod
+    def _division_name(cls, value):
+        """Отдаём имя отдела из связанной записи Division (или None)."""
+        if value is None or isinstance(value, str):
+            return value
+        return value.name
 
 
 class ImportResult(BaseModel):
