@@ -43,5 +43,7 @@ class EmployeeUpdate(BaseModel):
 
 class ImportResult(BaseModel):
     filename: str
+    total_rows: int
     rows_imported: int
+    rows_deleted: int
     preview: list[EmployeeRead]

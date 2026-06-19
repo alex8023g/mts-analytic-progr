@@ -1,12 +1,21 @@
 import io
 import uuid
+from dataclasses import dataclass
 from datetime import date
 
 import pandas as pd
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.models import Division, Employee
+
+
+@dataclass
+class ImportSummary:
+    total_rows: int  # сколько строк сотрудников было в файле
+    imported: int  # сколько записей в итоге сохранено
+    deleted: int  # сколько существующих записей удалено как устаревшие
+    employees: list[Employee]
 
 COLUMN_MAP = {
     "Департамент": "department",
@@ -119,11 +128,14 @@ def _has_fired_record(
 
 
 def _delete_active_records(
-    session: Session, full_name: str, division_id: uuid.UUID | None
+    session: Session, full_name: str, division_id: uuid.UUID | None, hired_at: date
 ) -> list[Employee]:
     stmt = select(Employee).where(
         Employee.full_name == full_name,
-        Employee.division_id == division_id,
+        or_(
+            Employee.division_id == division_id,
+            Employee.hired_at == hired_at,
+        ),
         Employee.fired_at.is_(None),
     )
     deleted = list(session.scalars(stmt))
@@ -132,11 +144,13 @@ def _delete_active_records(
     return deleted
 
 
-def import_employees(contents: bytes, session: Session) -> tuple[int, list[Employee]]:
+def import_employees(contents: bytes, session: Session) -> ImportSummary:
     """Parse the file"""
     report_date = _read_report_date(contents)
     df = _read_dataframe(contents)
 
+    total_rows = len(df)
+    deleted = 0
     divisions: dict[str, Division] = {}
     added: list[Employee] = []
     for rec in df.to_dict(orient="records"):
@@ -148,9 +162,11 @@ def import_employees(contents: bytes, session: Session) -> tuple[int, list[Emplo
             if _has_fired_record(session, employee.full_name, division_id):
                 continue
         else:
-            for dup in _delete_active_records(
-                session, employee.full_name, division_id
-            ):
+            dups = _delete_active_records(
+                session, employee.full_name, division_id, employee.hired_at
+            )
+            deleted += len(dups)
+            for dup in dups:
                 if dup in added:
                     added.remove(dup)
 
@@ -162,4 +178,9 @@ def import_employees(contents: bytes, session: Session) -> tuple[int, list[Emplo
     for employee in added:
         session.refresh(employee)
 
-    return len(added), added
+    return ImportSummary(
+        total_rows=total_rows,
+        imported=len(added),
+        deleted=deleted,
+        employees=added,
+    )

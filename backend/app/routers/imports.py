@@ -19,12 +19,14 @@ async def create_import(
     contents = await file.read()
 
     try:
-        count, employees = importer.import_employees(contents, session)
+        summary = importer.import_employees(contents, session)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return ImportResult(
         filename=file.filename,
-        rows_imported=count,
-        preview=[EmployeeRead.model_validate(e) for e in employees[:10]],
+        total_rows=summary.total_rows,
+        rows_imported=summary.imported,
+        rows_deleted=summary.deleted,
+        preview=[EmployeeRead.model_validate(e) for e in summary.employees[:10]],
     )
