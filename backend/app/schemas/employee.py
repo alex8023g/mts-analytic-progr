@@ -29,6 +29,18 @@ class EmployeeRead(BaseModel):
         return value.name
 
 
+class EmployeeUpdate(BaseModel):
+    full_name: str
+    position: str
+    department: str
+    manager: str | None = None
+    staff_type: str
+    salary: int
+    hired_at: date
+    fired_at: date | None = None
+    division: str | None = None
+
+
 class ImportResult(BaseModel):
     filename: str
     rows_imported: int
