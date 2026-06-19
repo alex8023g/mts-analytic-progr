@@ -1,5 +1,6 @@
 from datetime import date
 from typing import Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import or_, select
@@ -17,12 +18,16 @@ def list_employees(
     full_name: str | None = Query(default=None),
     relevance_date: date | None = Query(default=None),
     status: Literal["employed", "fired"] | None = Query(default=None),
+    division: UUID | None = Query(default=None),
     session: Session = Depends(get_session),
 ) -> list[Employee]:
     stmt = select(Employee).order_by(Employee.full_name)
 
     if full_name:
         stmt = stmt.where(Employee.full_name.ilike(f"%{full_name}%"))
+
+    if division:
+        stmt = stmt.where(Employee.division_id == division)
 
     if relevance_date:
         stmt = stmt.where(Employee.hired_at <= relevance_date)
