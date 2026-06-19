@@ -4,6 +4,7 @@ import { StatusFilter } from '@/components/employees/StatusFilter';
 import { getEmployees } from './employees_actions';
 import { EmployeesTable } from '@/components/employees/EmployeesTable';
 import { DivisionFilter } from '@/components/employees/DivisionFilter';
+import { CreateEmployeeButton } from '@/components/employees/CreateEmployeeButton';
 import { getDivisions } from './get_divisions_action';
 
 export default async function EmployeesPage({
@@ -31,8 +32,9 @@ export default async function EmployeesPage({
         <RelevanceDatePicker />
         <StatusFilter />
         <DivisionFilter divisions={divisions} />
+        <CreateEmployeeButton divisions={divisions} />
       </div>
-      <EmployeesTable data={employees} />
+      <EmployeesTable data={employees} divisions={divisions} />
     </main>
   );
 }

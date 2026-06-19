@@ -40,3 +40,52 @@ export async function getEmployees(
 
   return res.json();
 }
+
+export async function deleteEmployee(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/employees/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Не удалось удалить сотрудника (${res.status})`);
+  }
+}
+
+export type EmployeeUpdate = {
+  full_name: string;
+  position: string;
+  department: string;
+  manager: string | null;
+  staff_type: string;
+  salary: number;
+  hired_at: string;
+  fired_at: string | null;
+  division: string | null;
+};
+
+export async function updateEmployee(
+  id: string,
+  data: EmployeeUpdate,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/employees/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Не удалось сохранить сотрудника (${res.status})`);
+  }
+}
+
+export async function createEmployee(data: EmployeeUpdate): Promise<void> {
+  const res = await fetch(`${API_URL}/employees`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Не удалось создать сотрудника (${res.status})`);
+  }
+}

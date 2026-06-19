@@ -18,8 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { RowActions } from '@/components/employees/RowActions';
 
 import type { Employee } from '@/app/employees/employees_actions';
+import type { Division } from '@/app/employees/get_divisions_action';
 
 const dateFmt = new Intl.DateTimeFormat('ru-RU');
 const moneyFmt = new Intl.NumberFormat('ru-RU', {
@@ -32,7 +34,10 @@ function formatDate(value: string | null) {
   return value ? dateFmt.format(new Date(value)) : '—';
 }
 
-function buildColumns(relevanceDate: string): ColumnDef<Employee>[] {
+function buildColumns(
+  relevanceDate: string,
+  divisions: Division[],
+): ColumnDef<Employee>[] {
   return [
     { accessorKey: 'full_name', header: 'ФИО' },
     { accessorKey: 'position', header: 'Должность' },
@@ -73,14 +78,30 @@ function buildColumns(relevanceDate: string): ColumnDef<Employee>[] {
       header: 'Зарплата',
       cell: ({ getValue }) => moneyFmt.format(getValue() as number),
     },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <RowActions employee={row.original} divisions={divisions} />
+      ),
+    },
   ];
 }
 
-export function EmployeesTable({ data }: { data: Employee[] }) {
+export function EmployeesTable({
+  data,
+  divisions,
+}: {
+  data: Employee[];
+  divisions: Division[];
+}) {
   const searchParams = useSearchParams();
   const relevanceDate =
     searchParams.get('relevance_date') ?? format(new Date(), 'yyyy-MM-dd');
-  const columns = useMemo(() => buildColumns(relevanceDate), [relevanceDate]);
+  const columns = useMemo(
+    () => buildColumns(relevanceDate, divisions),
+    [relevanceDate, divisions],
+  );
 
   const table = useReactTable({
     data,
