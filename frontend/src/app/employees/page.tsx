@@ -3,6 +3,8 @@ import { RelevanceDatePicker } from '@/components/employees/RelevanceDatePicker'
 import { StatusFilter } from '@/components/employees/StatusFilter';
 import { getEmployees } from './employees_actions';
 import { EmployeesTable } from '@/components/employees/EmployeesTable';
+import { DivisionFilter } from '@/components/employees/DivisionFilter';
+import { getDivisions } from './get_divisions_action';
 
 export default async function EmployeesPage({
   searchParams,
@@ -10,6 +12,7 @@ export default async function EmployeesPage({
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const employees = await getEmployees(searchParams);
+  const divisions = await getDivisions();
 
   const reportDate = employees[0]?.report_date;
 
@@ -27,6 +30,7 @@ export default async function EmployeesPage({
         <DataTableTextFilter />
         <RelevanceDatePicker />
         <StatusFilter />
+        <DivisionFilter divisions={divisions} />
       </div>
       <EmployeesTable data={employees} />
     </main>
