@@ -1,5 +1,6 @@
 import { DataTableTextFilter } from '@/components/employees/DataTableTextFilter';
 import { RelevanceDatePicker } from '@/components/employees/RelevanceDatePicker';
+import { StatusFilter } from '@/components/employees/StatusFilter';
 import { getEmployees } from './employees_actions';
 import { EmployeesTable } from '@/components/employees/EmployeesTable';
 
@@ -25,6 +26,7 @@ export default async function EmployeesPage({
       <div className='flex flex-col gap-3 lg:flex-row lg:items-center'>
         <DataTableTextFilter />
         <RelevanceDatePicker />
+        <StatusFilter />
       </div>
       <EmployeesTable data={employees} />
     </main>
