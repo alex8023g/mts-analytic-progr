@@ -1,7 +1,8 @@
 from datetime import date
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.database import get_session
@@ -15,6 +16,7 @@ router = APIRouter(tags=["employees"])
 def list_employees(
     full_name: str | None = Query(default=None),
     relevance_date: date | None = Query(default=None),
+    status: Literal["employed", "fired"] | None = Query(default=None),
     session: Session = Depends(get_session),
 ) -> list[Employee]:
     stmt = select(Employee).order_by(Employee.full_name)
@@ -24,5 +26,16 @@ def list_employees(
 
     if relevance_date:
         stmt = stmt.where(Employee.hired_at <= relevance_date)
+
+    if status:
+        ref_date = relevance_date or date.today()
+        if status == "fired":
+            stmt = stmt.where(
+                Employee.fired_at.is_not(None), Employee.fired_at <= ref_date
+            )
+        else:
+            stmt = stmt.where(
+                or_(Employee.fired_at.is_(None), Employee.fired_at > ref_date)
+            )
 
     return list(session.scalars(stmt))
