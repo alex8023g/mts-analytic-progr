@@ -2,6 +2,7 @@ import io
 from datetime import date
 
 import pandas as pd
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Employee
@@ -85,17 +86,54 @@ def _as_date(value) -> date | None:
     return value.date() if hasattr(value, "date") else value
 
 
+def _has_fired_record(session: Session, full_name: str, division: str | None) -> bool:
+    stmt = select(Employee.id).where(
+        Employee.full_name == full_name,
+        Employee.division == division,
+        Employee.fired_at.is_not(None),
+    )
+    return session.scalars(stmt).first() is not None
+
+
+def _delete_active_records(
+    session: Session, full_name: str, division: str | None
+) -> list[Employee]:
+    stmt = select(Employee).where(
+        Employee.full_name == full_name,
+        Employee.division == division,
+        Employee.fired_at.is_(None),
+    )
+    deleted = list(session.scalars(stmt))
+    for dup in deleted:
+        session.delete(dup)
+    return deleted
+
+
 def import_employees(contents: bytes, session: Session) -> tuple[int, list[Employee]]:
     """Parse the file"""
     report_date = _read_report_date(contents)
     df = _read_dataframe(contents)
-    employees = [
-        _to_employee(rec, report_date) for rec in df.to_dict(orient="records")
-    ]
 
-    session.add_all(employees)
+    added: list[Employee] = []
+    for rec in df.to_dict(orient="records"):
+        employee = _to_employee(rec, report_date)
+
+        if employee.fired_at is None:
+            if _has_fired_record(session, employee.full_name, employee.division):
+                continue
+        else:
+            for dup in _delete_active_records(
+                session, employee.full_name, employee.division
+            ):
+                if dup in added:
+                    added.remove(dup)
+
+        session.add(employee)
+        session.flush()
+        added.append(employee)
+
     session.commit()
-    for employee in employees:
+    for employee in added:
         session.refresh(employee)
 
-    return len(employees), employees
+    return len(added), added
