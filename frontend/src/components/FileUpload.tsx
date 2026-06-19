@@ -7,8 +7,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
 type UploadResult = {
   filename: string;
-  content_type?: string;
-  size: number;
+  total_rows: number;
+  rows_imported: number;
+  rows_deleted: number;
 };
 
 type Status = 'idle' | 'uploading' | 'done' | 'error';
@@ -109,8 +110,12 @@ export function FileUpload() {
           </p>
           <ul className='mt-2 text-zinc-700 dark:text-zinc-300'>
             <li>Имя: {result.filename}</li>
-            {result.content_type && <li>Тип: {result.content_type}</li>}
-            <li>Размер: {result.size} байт</li>
+            <li>Строк в файле: {result.total_rows}</li>
+            <li>
+              Проигнорировано строк как неактуальные:{' '}
+              {result.total_rows - result.rows_imported}
+            </li>
+            <li>Сохранено записей: {result.rows_imported}</li>
           </ul>
         </div>
       )}
