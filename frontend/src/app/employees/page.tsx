@@ -1,4 +1,5 @@
 import { DataTableTextFilter } from '@/components/employees/DataTableTextFilter';
+import { RelevanceDatePicker } from '@/components/employees/RelevanceDatePicker';
 import { getEmployees } from './employees_actions';
 import { EmployeesTable } from '@/components/employees/EmployeesTable';
 
@@ -21,8 +22,9 @@ export default async function EmployeesPage({
           </p>
         )}
       </header>
-      <div>
+      <div className='flex flex-col gap-3 lg:flex-row lg:items-center'>
         <DataTableTextFilter />
+        <RelevanceDatePicker />
       </div>
       <EmployeesTable data={employees} />
     </main>
