@@ -6,13 +6,14 @@
 
 # .env
 
-- для backend
+- backend: обязателен (DATABASE_URL) — создаётся на основании backend/.env.example
+- frontend: необязателен; единственная переменная `API_URL` (адрес backend для серверных запросов), по умолчанию `http://127.0.0.1:8000`. Браузер обращается только к самому Next (server actions + route handler `/api/export`), поэтому публичный адрес backend и `NEXT_PUBLIC_*` не нужны
 
 # запуск
 
 1. убедиться, что PostgreSQL запущен
 2. в папке backend создать .env файл на основании .env.example и указать в нём DATABASE_URL
-3. в папке frontend создать файл .env: `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000`
+3. (опционально) frontend обращается к backend только со стороны сервера по адресу `API_URL` (по умолчанию `http://127.0.0.1:8000`); если backend на другом адресе — указать его в frontend/.env: `API_URL=http://...`
    далее все команды выполняются из корневой папки
 4. установить зависимости: `npm run install:all`
 5. создать базу данных и таблицы: `npm run db:create`
