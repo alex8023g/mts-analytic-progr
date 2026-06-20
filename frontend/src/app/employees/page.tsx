@@ -6,8 +6,8 @@ import { getEmployees } from './employees_actions';
 import { EmployeesTable } from '@/components/employees/EmployeesTable';
 import { DivisionFilter } from '@/components/employees/DivisionFilter';
 import { CreateEmployeeButton } from '@/components/employees/CreateEmployeeButton';
-import { ExportButton } from '@/components/employees/ExportButton';
 import { getDivisions } from './get_divisions_action';
+import { ExportFilter } from '@/components/employees/ExportFilter';
 
 export default async function EmployeesPage({
   searchParams,
@@ -42,10 +42,8 @@ export default async function EmployeesPage({
         <RelevanceDatePicker />
         <StatusFilter />
         <DivisionFilter divisions={divisions} />
-        <div className='flex gap-3 lg:ml-auto'>
-          <ExportButton data={employees} />
-          <CreateEmployeeButton divisions={divisions} />
-        </div>
+        <ExportFilter data={employees} />
+        <CreateEmployeeButton divisions={divisions} />
       </div>
       <EmployeesTable data={employees} divisions={divisions} />
     </main>

@@ -26,11 +26,12 @@ export function ExportButton({ data }: { data: Employee[] }) {
     <Button
       type='button'
       variant='outline'
+      className='/w-full'
       onClick={handleExport}
       disabled={data.length === 0}
     >
       <Download className='h-4 w-4' />
-      XLSX
+      Загрузить в XLSX
     </Button>
   );
 }
