@@ -8,8 +8,12 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.database import get_session
-from app.models import Employee
-from app.services.exporter import build_employees_xlsx
+from app.models import Division, Employee
+from app.services.exporter import (
+    build_divisions_xlsx,
+    build_employees_and_divisions_xlsx,
+    build_employees_xlsx,
+)
 
 router = APIRouter(tags=["exports"])
 
@@ -25,8 +29,9 @@ def export_employees(
     status: Literal["employed", "fired"] | None = Query(default=None),
     division: UUID | None = Query(default=None),
     session: Session = Depends(get_session),
+    exports: Literal["employees", "departments"] | None = Query(default=None)
 ) -> StreamingResponse:
-    
+
     stmt = select(Employee).order_by(Employee.full_name)
 
     if full_name:
@@ -49,10 +54,27 @@ def export_employees(
                 or_(Employee.fired_at.is_(None), Employee.fired_at > ref_date)
             )
 
-    employees = list(session.scalars(stmt))
-    content = build_employees_xlsx(employees, relevance_date)
+    def load_employees() -> list[Employee]:
+        return list(session.scalars(stmt))
 
-    filename = f"employees_{date.today().isoformat()}.xlsx"
+    def load_divisions() -> list[Division]:
+        return list(
+            session.scalars(select(Division).order_by(Division.name))
+        )
+
+    if exports == "employees":
+        content = build_employees_xlsx(load_employees(), relevance_date)
+        name = "employees"
+    elif exports == "departments":
+        content = build_divisions_xlsx(load_divisions())
+        name = "departments"
+    else:
+        content = build_employees_and_divisions_xlsx(
+            load_employees(), load_divisions(), relevance_date
+        )
+        name = "employees_departments"
+
+    filename = f"{name}_{date.today().isoformat()}.xlsx"
     return StreamingResponse(
         iter([content]),
         media_type=XLSX_MEDIA_TYPE,
