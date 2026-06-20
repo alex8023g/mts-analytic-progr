@@ -30,9 +30,14 @@ export async function getEmployees(
     ),
   ).toString();
 
-  const res = await fetch(`${API_URL}/employees${qs ? `?${qs}` : ''}`, {
-    cache: 'no-store',
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/employees${qs ? `?${qs}` : ''}`, {
+      cache: 'no-store',
+    });
+  } catch {
+    throw new Error('Не удалось связаться с сервером. Проверьте подключение.');
+  }
 
   if (!res.ok) {
     throw new Error(`Не удалось загрузить сотрудников (${res.status})`);

@@ -60,9 +60,8 @@ export function FileUpload() {
       setStatus('done');
       setFile(null);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Не удалось загрузить файл',
-      );
+      console.error(err);
+      setError('Не удалось загрузить файл');
       setStatus('error');
     }
   }
