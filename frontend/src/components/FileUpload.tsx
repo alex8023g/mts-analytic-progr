@@ -3,14 +3,9 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+import { importFile, type ImportResult } from '@/app/import/import_actions';
 
-type UploadResult = {
-  filename: string;
-  total_rows: number;
-  rows_imported: number;
-  rows_deleted: number;
-};
+type UploadResult = ImportResult;
 
 type Status = 'idle' | 'uploading' | 'done' | 'error';
 
@@ -43,25 +38,14 @@ export function FileUpload() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch(`${API_URL}/imports`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error(`Сервер вернул ${res.status}`);
-      }
-
-      const result: UploadResult = await res.json();
-
-      console.log('Upload result:', result);
+      const result = await importFile(formData);
 
       setResult(result);
       setStatus('done');
       setFile(null);
     } catch (err) {
       console.error(err);
-      setError('Не удалось загрузить файл');
+      setError(err instanceof Error ? err.message : 'Не удалось загрузить файл');
       setStatus('error');
     }
   }
