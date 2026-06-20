@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date
 
 import pandas as pd
-from sqlalchemy import or_, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
 from app.models import Division, Employee
@@ -144,10 +144,18 @@ def _delete_active_records(
     return deleted
 
 
+def _clear_tables(session: Session) -> None:
+    session.execute(delete(Employee))
+    session.execute(delete(Division))
+    session.flush()
+
+
 def import_employees(contents: bytes, session: Session) -> ImportSummary:
     """Parse the file"""
     report_date = _read_report_date(contents)
     df = _read_dataframe(contents)
+
+    _clear_tables(session)
 
     total_rows = len(df)
     deleted = 0
