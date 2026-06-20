@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+
+# Environment (keep the example)
+.env
+.env.*
+!.env.example
+
+# Uploaded files (runtime artifacts)
+/uploads/
+
+# OS
+.DS_Store

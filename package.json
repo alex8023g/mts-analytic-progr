@@ -4,8 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "backend": "cd backend && .venv/bin/fastapi dev app/main.py",
-    "frontend": "cd frontend && npm run dev",
+    "backend:dev": "cd backend && .venv/bin/fastapi dev app/main.py",
+    "backend:prod": "cd backend && .venv/bin/fastapi run app/main.py",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:prod": "cd frontend && npm run start",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+    "install:all": "npm run install:frontend && npm run install:backend",
     "db:create": "cd backend && .venv/bin/python -m scripts.create_db",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
