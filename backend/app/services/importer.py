@@ -1,5 +1,6 @@
 import io
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 
@@ -150,18 +151,26 @@ def _clear_tables(session: Session) -> None:
     session.flush()
 
 
-def import_employees(contents: bytes, session: Session) -> ImportSummary:
-    """Parse the file"""
+def import_employees(
+    contents: bytes,
+    session: Session,
+    progress: Callable[[int, int], None] | None = None,
+) -> ImportSummary:
+
     report_date = _read_report_date(contents)
     df = _read_dataframe(contents)
 
     _clear_tables(session)
 
-    total_rows = len(df)
+    records = df.to_dict(orient="records")
+    total_rows = len(records)
     deleted = 0
     divisions: dict[str, Division] = {}
     added: list[Employee] = []
-    for rec in df.to_dict(orient="records"):
+    for processed, rec in enumerate(records, start=1):
+        if progress is not None:
+            progress(processed, total_rows)
+
         division = _get_or_create_division(session, rec.get("division"), divisions)
         division_id = division.id if division else None
         employee = _to_employee(rec, report_date, division)

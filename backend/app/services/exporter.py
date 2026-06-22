@@ -1,5 +1,5 @@
 import io
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import date
 
 from openpyxl import Workbook
@@ -45,12 +45,17 @@ def _write_header(ws: Worksheet, columns: list[tuple[str, int]]) -> None:
 
 
 def _write_employees_sheet(
-    ws: Worksheet, employees: Iterable[Employee], ref_date: date
+    ws: Worksheet,
+    employees: Iterable[Employee],
+    ref_date: date,
+    progress: Callable[[int, int], None] | None = None,
 ) -> None:
     ws.title = "Сотрудники"
     _write_header(ws, COLUMNS)
 
-    for employee in employees:
+    employees = list(employees)
+    total = len(employees)
+    for processed, employee in enumerate(employees, start=1):
         row = [
             employee.full_name,
             employee.position,
@@ -68,14 +73,24 @@ def _write_employees_sheet(
         ws.cell(row=excel_row, column=6).number_format = DATE_FORMAT
         ws.cell(row=excel_row, column=7).number_format = DATE_FORMAT
         ws.cell(row=excel_row, column=10).number_format = MONEY_FORMAT
+        if progress is not None:
+            progress(processed, total)
 
 
-def _write_divisions_sheet(ws: Worksheet, divisions: Iterable[Division]) -> None:
+def _write_divisions_sheet(
+    ws: Worksheet,
+    divisions: Iterable[Division],
+    progress: Callable[[int, int], None] | None = None,
+) -> None:
     ws.title = "Отделы"
     _write_header(ws, DIVISION_COLUMNS)
 
-    for division in divisions:
+    divisions = list(divisions)
+    total = len(divisions)
+    for processed, division in enumerate(divisions, start=1):
         ws.append([division.name])
+        if progress is not None:
+            progress(processed, total)
 
 
 def _to_bytes(wb: Workbook) -> bytes:
@@ -85,18 +100,23 @@ def _to_bytes(wb: Workbook) -> bytes:
 
 
 def build_employees_xlsx(
-    employees: Iterable[Employee], relevance_date: date | None = None
+    employees: Iterable[Employee],
+    relevance_date: date | None = None,
+    progress: Callable[[int, int], None] | None = None,
 ) -> bytes:
     ref_date = relevance_date or date.today()
 
     wb = Workbook()
-    _write_employees_sheet(wb.active, employees, ref_date)
+    _write_employees_sheet(wb.active, employees, ref_date, progress)
     return _to_bytes(wb)
 
 
-def build_divisions_xlsx(divisions: Iterable[Division]) -> bytes:
+def build_divisions_xlsx(
+    divisions: Iterable[Division],
+    progress: Callable[[int, int], None] | None = None,
+) -> bytes:
     wb = Workbook()
-    _write_divisions_sheet(wb.active, divisions)
+    _write_divisions_sheet(wb.active, divisions, progress)
     return _to_bytes(wb)
 
 
@@ -104,10 +124,12 @@ def build_employees_and_divisions_xlsx(
     employees: Iterable[Employee],
     divisions: Iterable[Division],
     relevance_date: date | None = None,
+    progress: Callable[[int, int], None] | None = None,
 ) -> bytes:
     ref_date = relevance_date or date.today()
 
     wb = Workbook()
-    _write_employees_sheet(wb.active, employees, ref_date)
+    # Progress tracks the (dominant) employees sheet; divisions are appended after.
+    _write_employees_sheet(wb.active, employees, ref_date, progress)
     _write_divisions_sheet(wb.create_sheet(), divisions)
     return _to_bytes(wb)

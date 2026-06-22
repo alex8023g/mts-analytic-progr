@@ -9,10 +9,15 @@ export type ImportResult = {
   rows_deleted: number;
 };
 
-export async function importFile(formData: FormData): Promise<ImportResult> {
+export async function importFile(
+  formData: FormData,
+  jobId?: string,
+): Promise<ImportResult> {
+  const query = jobId ? `?job_id=${encodeURIComponent(jobId)}` : '';
+
   let res: Response;
   try {
-    res = await fetch(`${API_URL}/imports`, {
+    res = await fetch(`${API_URL}/imports${query}`, {
       method: 'POST',
       body: formData,
     });
