@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.database import get_session
 from app.schemas.employee import EmployeeRead, ImportResult
 from app.services import importer
+from app.services.history import record_operation
 from app.services.progress import hub, stream_job_events
 
 router = APIRouter(tags=["imports"])
@@ -48,8 +49,23 @@ async def create_import(
             importer.import_employees, contents, session, report
         )
     except ValueError as exc:
+        record_operation(
+            "import",
+            "error",
+            filename=file.filename,
+            file_size=len(contents),
+            detail=str(exc),
+        )
         publish({"type": "error", "detail": str(exc)})
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    record_operation(
+        "import",
+        "success",
+        filename=file.filename,
+        file_size=len(contents),
+        rows=summary.imported,
+    )
 
     result = ImportResult(
         filename=file.filename,

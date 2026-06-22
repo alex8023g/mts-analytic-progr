@@ -15,6 +15,7 @@ from app.services.exporter import (
     build_employees_and_divisions_xlsx,
     build_employees_xlsx,
 )
+from app.services.history import record_operation
 from app.services.progress import hub, stream_job_events
 
 router = APIRouter(tags=["exports"])
@@ -95,11 +96,17 @@ async def export_employees(
 
     try:
         content, name = await asyncio.to_thread(build)
-    except Exception as exc: 
+    except Exception as exc:
+        record_operation(
+            "export", "error", detail="Не удалось сформировать экспорт"
+        )
         publish({"type": "error", "detail": "Не удалось сформировать экспорт"})
         raise exc
 
     filename = f"{name}_{date.today().isoformat()}.xlsx"
+    record_operation(
+        "export", "success", filename=filename, file_size=len(content)
+    )
     publish({"type": "result", "filename": filename})
     return StreamingResponse(
         iter([content]),
