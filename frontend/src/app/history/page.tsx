@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/table';
 import { getHistory, type OperationLog } from './history_actions';
 
+export const dynamic = 'force-dynamic';
+
 function formatBytes(bytes: number | null): string {
   if (bytes === null) return '—';
   if (bytes < 1024) return `${bytes} Б`;
