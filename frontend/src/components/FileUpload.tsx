@@ -4,22 +4,27 @@ import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 
 import { importFile, type ImportResult } from '@/app/import/import_actions';
+import { openJobSocket } from '@/lib/jobProgress';
 
 type UploadResult = ImportResult;
 
 type Status = 'idle' | 'uploading' | 'done' | 'error';
+
+type Progress = { processed: number; total: number };
 
 export function FileUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [result, setResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState<Progress | null>(null);
 
   const onDrop = useCallback((accepted: File[]) => {
     setFile(accepted[0] ?? null);
     setStatus('idle');
     setResult(null);
     setError('');
+    setProgress(null);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -33,20 +38,32 @@ export function FileUpload() {
     setStatus('uploading');
     setError('');
     setResult(null);
+    setProgress(null);
+
+    const jobId = crypto.randomUUID();
+
+    const socket = await openJobSocket('imports', jobId, {
+      onProgress: (processed, total) => setProgress({ processed, total }),
+    });
 
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      const result = await importFile(formData);
+      const result = await importFile(formData, jobId);
 
       setResult(result);
       setStatus('done');
       setFile(null);
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'Не удалось загрузить файл');
+      setError(
+        err instanceof Error ? err.message : 'Не удалось загрузить файл',
+      );
       setStatus('error');
+    } finally {
+      socket?.close();
+      setProgress(null);
     }
   }
 
@@ -85,6 +102,26 @@ export function FileUpload() {
       >
         {status === 'uploading' ? 'Загрузка…' : 'Загрузить'}
       </button>
+
+      {status === 'uploading' && progress && (
+        <div className='flex flex-col gap-1.5'>
+          <div className='h-2 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10'>
+            <div
+              className='bg-foreground h-full rounded-full transition-[width] duration-150 ease-out'
+              style={{
+                width: `${
+                  progress.total
+                    ? Math.round((progress.processed / progress.total) * 100)
+                    : 0
+                }%`,
+              }}
+            />
+          </div>
+          <p className='text-xs text-zinc-600 dark:text-zinc-400'>
+            Обработано {progress.processed} из {progress.total} строк
+          </p>
+        </div>
+      )}
 
       {status === 'done' && result && (
         <div className='rounded-lg border border-green-600/30 bg-green-50 p-4 text-sm dark:bg-green-950/30'>

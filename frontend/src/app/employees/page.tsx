@@ -24,12 +24,20 @@ export default async function EmployeesPage({
       <header className='flex flex-col gap-1'>
         <div className='flex items-center justify-between gap-4'>
           <h1 className='text-2xl font-semibold tracking-tight'>Сотрудники</h1>
-          <Link
-            href='/import'
-            className='inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 underline transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
-          >
-            Импорт файла
-          </Link>
+          <div className='flex items-center gap-4'>
+            <Link
+              href='/history'
+              className='inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 underline transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
+            >
+              История операций
+            </Link>
+            <Link
+              href='/import'
+              className='inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 underline transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
+            >
+              Импорт файла
+            </Link>
+          </div>
         </div>
         {reportDate && (
           <p className='text-sm text-zinc-600 dark:text-zinc-400'>
